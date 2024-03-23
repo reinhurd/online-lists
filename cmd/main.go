@@ -2,13 +2,17 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
+	"github.com/joho/godotenv"
+	"online-lists/internal/clients/yandex"
 )
 
 var db = make(map[string]string)
 
-func setupRouter() *gin.Engine {
+func setupRouter(yaCl *yandex.Client) *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
@@ -27,6 +31,13 @@ func setupRouter() *gin.Engine {
 		} else {
 			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
 		}
+	})
+
+	r.GET("/ya_list", func(c *gin.Context) {
+		yaCl.GetYDList()
+	})
+	r.GET("/ya_file", func(c *gin.Context) {
+		yaCl.GetYDFileByPath(os.Getenv("YDFILE"))
 	})
 
 	// Authorized group (uses gin.BasicAuth() middleware)
@@ -68,7 +79,13 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
-	r := setupRouter()
+	if err := godotenv.Load("secret.env"); err != nil {
+		panic(err)
+	}
+	YA_ID := os.Getenv("YANDEX_TOKEN")
+	restyCl := resty.New()
+	yaClient := yandex.NewClient(restyCl, YA_ID)
+	r := setupRouter(yaClient)
 	// Listen and Server in 0.0.0.0:8080
 	err := r.Run(":8080")
 	if err != nil {
