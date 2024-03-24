@@ -2,3 +2,4 @@
 /vendor
 secret.env
 tmp*
+*.csv
