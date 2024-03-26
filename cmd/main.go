@@ -49,6 +49,7 @@ func main() {
 	YA_ID := os.Getenv("YANDEX_TOKEN")
 	restyCl := resty.New()
 	yaClient := yandex.NewClient(restyCl, YA_ID)
+
 	r := setupRouter(yaClient)
 	//start telegram bot
 	telegram.StartBot(os.Getenv("TG_SECRET_KEY"))
