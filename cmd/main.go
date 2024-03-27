@@ -52,7 +52,7 @@ func main() {
 
 	r := setupRouter(yaClient)
 	//start telegram bot
-	telegram.StartBot(os.Getenv("TG_SECRET_KEY"))
+	telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient)
 
 	// Listen and Server in 0.0.0.0:8080
 	err := r.Run(":8080")

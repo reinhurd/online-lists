@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -91,6 +92,23 @@ func createCSV(f *excelize.File, worksheet string) {
 	}
 }
 
+func GetCSVHeaders(csvFile string) []string {
+	f, err := os.Open(csvFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+	r.FieldsPerRecord = -1
+	records, err := r.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return records[0]
+}
+
 func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 	f, err := os.Open(csvFile)
 	if err != nil {
@@ -130,5 +148,93 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 		return err
 	}
 
+	return nil
+}
+
+func InsertNewValueUnderHeader(csvFile, header, value string) error {
+	// TODO remove the temp file logic
+	tempFileName := "tempfile.csv"
+
+	// Open the original CSV file
+	file, err := os.Open(csvFile)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return err
+	}
+	defer file.Close()
+
+	// Create a new temp file to write modifications
+	tempFile, err := os.Create(tempFileName)
+	if err != nil {
+		fmt.Println("Error creating temp file:", err)
+		return err
+	}
+	defer tempFile.Close()
+
+	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1
+	writer := csv.NewWriter(tempFile)
+
+	// Read the headers
+	headers, err := reader.Read()
+	if err != nil {
+		fmt.Println("Error reading headers:", err)
+		return err
+	}
+
+	// Find the index of the target header
+	targetIndex := -1
+	for i, header1 := range headers {
+		if header1 == header {
+			targetIndex = i
+			break
+		}
+	}
+
+	if targetIndex == -1 {
+		fmt.Println("Header not found")
+		return err
+	}
+
+	// Write headers to the temp file
+	if err = writer.Write(headers); err != nil {
+		fmt.Println("Error writing headers:", err)
+		return err
+	}
+
+	// Read and modify rows
+	records, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println("Error reading records:", err)
+		return err
+	}
+
+	isSaved := false
+	for _, record := range records {
+		if strings.TrimSpace(record[targetIndex]) == "" && !isSaved {
+			record[targetIndex] = value
+			isSaved = true
+		}
+		if err = writer.Write(record); err != nil {
+			fmt.Println("Error writing record:", err)
+			return err
+		}
+	}
+
+	writer.Flush()
+	if err = writer.Error(); err != nil {
+		fmt.Println("Error flushing writer:", err)
+		return err
+	}
+
+	// Close the temp file and original file before renaming
+	tempFile.Close()
+	file.Close()
+
+	// Replace the original file with the modified file
+	if err = os.Rename(tempFileName, csvFile); err != nil {
+		fmt.Println("Error replacing the original file:", err)
+		return err
+	}
 	return nil
 }
