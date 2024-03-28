@@ -9,12 +9,11 @@ import (
 	"github.com/joho/godotenv"
 	"online-lists/internal/clients/telegram"
 	"online-lists/internal/clients/yandex"
-	"online-lists/internal/helpers"
 )
 
 var db = make(map[string]string)
 
-func setupRouter(yaCl *yandex.Client) *gin.Engine {
+func setupRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
@@ -31,14 +30,6 @@ func setupRouter(yaCl *yandex.Client) *gin.Engine {
 		}
 	})
 
-	r.GET("/ya_list", func(c *gin.Context) {
-		yaCl.GetYDList()
-	})
-	r.GET("/ya_file", func(c *gin.Context) {
-		yaCl.GetYDFileByPath(os.Getenv("YDFILE"))
-		helpers.ConvertToCSV()
-	})
-
 	return r
 }
 
@@ -50,7 +41,7 @@ func main() {
 	restyCl := resty.New()
 	yaClient := yandex.NewClient(restyCl, YA_ID)
 
-	r := setupRouter(yaClient)
+	r := setupRouter()
 	//start telegram bot
 	telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient)
 

@@ -238,3 +238,19 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 	}
 	return nil
 }
+
+func GetCSVFiles() ([]string, error) {
+	files, err := os.ReadDir("internal/repository")
+	if err != nil {
+		return nil, err
+	}
+
+	var csvFiles []string
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".csv") {
+			csvFiles = append(csvFiles, file.Name())
+		}
+	}
+
+	return csvFiles, nil
+}

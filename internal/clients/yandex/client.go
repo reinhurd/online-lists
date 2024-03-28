@@ -2,9 +2,7 @@ package yandex
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"online-lists/internal/models"
@@ -19,7 +17,7 @@ func (c *Client) GetYDToken() {
 	//TODO implement
 }
 
-func (c *Client) GetYDList() {
+func (c *Client) GetYDList() []string {
 	list := models.YADISKList{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -30,11 +28,11 @@ func (c *Client) GetYDList() {
 		panic(err)
 	}
 	err = json.Unmarshal(res.Body(), &list)
+	var names []string
 	for _, item := range list.Items {
-		if strings.Contains(item.Name, "МАЙН") {
-			fmt.Printf("%+v\n", item)
-		}
+		names = append(names, item.Name)
 	}
+	return names
 }
 
 func (c *Client) GetYDFileByPath(path string) {

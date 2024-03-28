@@ -11,6 +11,8 @@ import (
 	"online-lists/internal/helpers"
 )
 
+var defaultCsvName string
+
 func StartBot(tgToken string, yacl *yandex.Client) {
 	bot, err := tgbotapi.NewBotAPI(tgToken)
 	if err != nil {
@@ -35,21 +37,49 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 
 			//TODO move to handler
 			if update.Message.Text == "/headers" {
-				res := helpers.GetCSVHeaders("internal/repository/SPISKEN.csv")
+				res := helpers.GetCSVHeaders("internal/repository/" + defaultCsvName)
 				resp = strings.Join(res, ", ")
 			}
-			if strings.Contains(update.Message.Text, "/add") {
+			if strings.Contains(update.Message.Text, "/set_csv") {
 				splStr := strings.Split(update.Message.Text, " ")
-				err = helpers.InsertNewValueUnderHeader("internal/repository/SPISKEN.csv", splStr[1], splStr[2])
+				defaultCsvName = splStr[1]
+				resp = fmt.Sprintf("Set %s as default csv", splStr[1])
+			}
+			if strings.Contains(update.Message.Text, "/list_csv") {
+				files, err := helpers.GetCSVFiles()
 				if err != nil {
 					fmt.Println(err)
 				}
-				resp = fmt.Sprintf("Added %s under %s", splStr[2], splStr[1])
+				resp = strings.Join(files, ", ")
+			}
+			if strings.Contains(update.Message.Text, "/add") {
+				if defaultCsvName == "" {
+					resp = "Set default csv filename first"
+				} else {
+					splStr := strings.Split(update.Message.Text, " ")
+					err = helpers.InsertNewValueUnderHeader("internal/repository/"+defaultCsvName, splStr[1], splStr[2])
+					if err != nil {
+						fmt.Println(err)
+					}
+					resp = fmt.Sprintf("Added %s under %s", splStr[2], splStr[1])
+				}
 			}
 			if strings.Contains(update.Message.Text, "/ya_file") {
 				yacl.GetYDFileByPath(os.Getenv("YDFILE"))
 				helpers.ConvertToCSV()
 				resp = "File downloaded and converted to CSV"
+			}
+			if strings.Contains(update.Message.Text, "/ya_list") {
+				list := yacl.GetYDList()
+				resp = strings.Join(list, ", ")
+			}
+			if strings.Contains(update.Message.Text, "/help") {
+				resp = "/headers - get headers from default csv\n" +
+					"/set_csv <filename> - set default csv\n" +
+					"/list_csv - list all csv files\n" +
+					"/add <header> <value> - add value under header\n" +
+					"/ya_file - download file from Yandex Disk\n" +
+					"/ya_list - list files from Yandex Disk"
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, resp)
