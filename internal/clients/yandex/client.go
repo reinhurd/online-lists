@@ -35,7 +35,7 @@ func (c *Client) GetYDList() []string {
 	return names
 }
 
-func (c *Client) GetYDFileByPath(path string) {
+func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
 	item := models.YDItem{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -48,7 +48,7 @@ func (c *Client) GetYDFileByPath(path string) {
 	err = json.Unmarshal(res.Body(), &item)
 	//download file by link
 	res, err = c.resty.R().SetHeaders(headers).Get(item.File)
-	err = os.WriteFile("internal/repository/tmp.xlsx", res.Body(), 0644)
+	err = os.WriteFile("internal/repository/"+defaultExcelName, res.Body(), 0644)
 	if err != nil {
 		panic(err)
 	}

@@ -65,8 +65,9 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 				}
 			}
 			if strings.Contains(update.Message.Text, "/ya_file") {
-				yacl.GetYDFileByPath(os.Getenv("YDFILE"))
-				helpers.ConvertToCSV()
+				defaultExcelName := "tmp.xlsx"
+				yacl.GetYDFileByPath(os.Getenv("YDFILE"), defaultExcelName)
+				helpers.ConvertToCSV(defaultExcelName)
 				resp = "File downloaded and converted to CSV"
 			}
 			if strings.Contains(update.Message.Text, "/ya_list") {

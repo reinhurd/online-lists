@@ -37,8 +37,8 @@ func ReadXLSX(sheetname string) {
 	}
 }
 
-func ConvertToCSV() {
-	f := openExcel("internal/repository/tmp.xlsx")
+func ConvertToCSV(excelName string) {
+	f := openExcel("internal/repository/" + excelName)
 
 	worksheets := f.GetSheetList()
 
