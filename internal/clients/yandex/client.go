@@ -2,6 +2,7 @@ package yandex
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/go-resty/resty/v2"
@@ -52,6 +53,34 @@ func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (c *Client) SaveFileToYD(filename string) error {
+	fileData, err := os.Open("internal/repository/" + filename)
+	if err != nil {
+		panic(err)
+	}
+	headers := map[string]string{
+		"Accept":        "application/json",
+		"Authorization": "OAuth " + c.token,
+	}
+	pathToUpload := "disk:/" + filename
+	respUrl := models.YDUploadResponse{}
+	urlToUpload, err := c.resty.R().SetHeaders(headers).Get("https://cloud-api.yandex.net/v1/disk/resources/upload?path=" + pathToUpload)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(urlToUpload.Body(), &respUrl)
+	if err != nil {
+		panic(err)
+	}
+	//todo deal with unsupported protocol error when uploading file
+	put, err := c.resty.R().SetHeaders(headers).SetBody(fileData).Put(respUrl.Href)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(put.StatusCode())
+	}
+	return err
 }
 
 func NewClient(

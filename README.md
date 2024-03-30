@@ -10,3 +10,4 @@ App for maintaining lists through different clients
 - Add deployment logic
 - Add a clients through messengers
 - Add a web client
+- Add message to tg when app is closing

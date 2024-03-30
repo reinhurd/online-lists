@@ -74,13 +74,26 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 				list := yacl.GetYDList()
 				resp = strings.Join(list, ", ")
 			}
+			if strings.Contains(update.Message.Text, "/ya_upload") {
+				splStr := strings.Split(update.Message.Text, " ")
+				if len(splStr) < 1 {
+					resp = "Please specify filename"
+				} else {
+					err = yacl.SaveFileToYD(splStr[1])
+					if err != nil {
+						resp = "Error uploading file to Yandex Disk " + err.Error()
+					}
+					resp = "File uploaded to Yandex Disk"
+				}
+			}
 			if strings.Contains(update.Message.Text, "/help") {
 				resp = "/headers - get headers from default csv\n" +
 					"/set_csv <filename> - set default csv\n" +
 					"/list_csv - list all csv files\n" +
 					"/add <header> <value> - add value under header\n" +
 					"/ya_file - download file from Yandex Disk\n" +
-					"/ya_list - list files from Yandex Disk"
+					"/ya_list - list files from Yandex Disk\n" +
+					"/ya_upload <filename> - upload file to Yandex Disk\n"
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, resp)

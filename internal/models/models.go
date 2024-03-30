@@ -8,6 +8,13 @@ type YADISKList struct {
 	Offset int      `json:"offset"`
 }
 
+type YDUploadResponse struct {
+	OperationID string `json:"operation_id"`
+	Href        string `json:"href"`
+	Method      string `json:"method"`
+	Templated   bool   `json:"templated"`
+}
+
 type YDItem struct {
 	AntivirusStatus struct {
 	} `json:"antivirus_status"`
