@@ -9,13 +9,19 @@ import (
 	"github.com/joho/godotenv"
 	"online-lists/internal/clients/telegram"
 	"online-lists/internal/clients/yandex"
+	"online-lists/internal/service"
 )
 
-func setupRouter() *gin.Engine {
+func setupRouter(svc *service.Service) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
+	})
+	r.GET("/ya_list", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.GetYaList(),
+		})
 	})
 
 	return r
@@ -25,13 +31,17 @@ func main() {
 	if err := godotenv.Load("secret.env"); err != nil {
 		panic(err)
 	}
-	YA_ID := os.Getenv("YANDEX_TOKEN")
+	YaId := os.Getenv("YANDEX_TOKEN")
 	restyCl := resty.New()
-	yaClient := yandex.NewClient(restyCl, YA_ID)
+	yaClient := yandex.NewClient(restyCl, YaId)
+	svc := service.NewService(yaClient)
 
-	r := setupRouter()
+	r := setupRouter(svc)
 	//start telegram bot
-	telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient)
+
+	go func() {
+		telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient)
+	}()
 
 	// Listen and Server in 0.0.0.0:8080
 	err := r.Run(":8080")
