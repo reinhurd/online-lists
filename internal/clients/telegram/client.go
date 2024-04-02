@@ -35,24 +35,21 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 
 			resp = "Hello, " + update.Message.From.UserName + "!" + " You said: " + update.Message.Text
 
-			//TODO move to handler
-			if update.Message.Text == "/headers" {
+			switch {
+			case update.Message.Text == "/headers":
 				res := helpers.GetCSVHeaders("internal/repository/" + defaultCsvName)
 				resp = strings.Join(res, ", ")
-			}
-			if strings.Contains(update.Message.Text, "/set_csv") {
+			case strings.Contains(update.Message.Text, "/set_csv"):
 				splStr := strings.Split(update.Message.Text, " ")
 				defaultCsvName = splStr[1]
 				resp = fmt.Sprintf("Set %s as default csv", splStr[1])
-			}
-			if strings.Contains(update.Message.Text, "/list_csv") {
+			case strings.Contains(update.Message.Text, "/list_csv"):
 				files, err := helpers.GetCSVFiles()
 				if err != nil {
 					fmt.Println(err)
 				}
 				resp = strings.Join(files, ", ")
-			}
-			if strings.Contains(update.Message.Text, "/add") {
+			case strings.Contains(update.Message.Text, "/add"):
 				if defaultCsvName == "" {
 					resp = "Set default csv filename first"
 				} else {
@@ -63,18 +60,15 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 					}
 					resp = fmt.Sprintf("Added %s under %s", splStr[2], splStr[1])
 				}
-			}
-			if strings.Contains(update.Message.Text, "/ya_file") {
+			case strings.Contains(update.Message.Text, "/ya_file"):
 				defaultExcelName := "tmp.xlsx"
 				yacl.GetYDFileByPath(os.Getenv("YDFILE"), defaultExcelName)
 				helpers.ConvertToCSV(defaultExcelName)
 				resp = "File downloaded and converted to CSV"
-			}
-			if strings.Contains(update.Message.Text, "/ya_list") {
+			case strings.Contains(update.Message.Text, "/ya_list"):
 				list := yacl.GetYDList()
 				resp = strings.Join(list, ", ")
-			}
-			if strings.Contains(update.Message.Text, "/ya_upload") {
+			case strings.Contains(update.Message.Text, "/ya_upload"):
 				splStr := strings.Split(update.Message.Text, " ")
 				if len(splStr) < 1 {
 					resp = "Please specify filename"
@@ -85,8 +79,7 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 					}
 					resp = "File uploaded to Yandex Disk"
 				}
-			}
-			if strings.Contains(update.Message.Text, "/help") {
+			case strings.Contains(update.Message.Text, "/help"):
 				resp = "/headers - get headers from default csv\n" +
 					"/set_csv <filename> - set default csv\n" +
 					"/list_csv - list all csv files\n" +
