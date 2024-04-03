@@ -152,7 +152,6 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 }
 
 func InsertNewValueUnderHeader(csvFile, header, value string) error {
-	// TODO remove the temp file logic
 	tempFileName := "tempfile.csv"
 
 	// Open the original CSV file

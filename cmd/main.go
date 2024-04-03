@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"online-lists/internal/clients/telegram"
 	"online-lists/internal/clients/yandex"
+	"online-lists/internal/helpers"
 	"online-lists/internal/service"
 )
 
@@ -22,6 +23,10 @@ func setupRouter(svc *service.Service) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{
 			"message": svc.GetYaList(),
 		})
+	})
+	r.GET("/", func(c *gin.Context) {
+		c.Header("Content-Type", "text/html")
+		c.String(http.StatusOK, helpers.GetHomeTemplate())
 	})
 
 	return r
