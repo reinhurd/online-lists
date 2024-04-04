@@ -11,22 +11,35 @@ import (
 	"online-lists/internal/helpers"
 )
 
+var lastChatID int64
+var lastMessageID int
+
 var defaultCsvName string
 
-func StartBot(tgToken string, yacl *yandex.Client) {
-	bot, err := tgbotapi.NewBotAPI(tgToken)
-	if err != nil {
-		log.Panic(err)
-	}
+type TGBot struct {
+	yacl *yandex.Client
+	bot  *tgbotapi.BotAPI
+	u    tgbotapi.UpdateConfig
+}
 
-	bot.Debug = true
+func (t *TGBot) GetUpdatesChan() tgbotapi.UpdatesChannel {
+	return t.bot.GetUpdatesChan(t.u)
+}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+func (t *TGBot) Send(chatID int64, messageID int, resp string) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(chatID, resp)
+	msg.ReplyToMessageID = messageID
+	return t.bot.Send(msg)
+}
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+func (t *TGBot) SendToLastChat(resp string) (tgbotapi.Message, error) {
+	msg := tgbotapi.NewMessage(lastChatID, resp)
+	msg.ReplyToMessageID = lastMessageID
+	return t.bot.Send(msg)
+}
 
-	updates := bot.GetUpdatesChan(u)
+func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
+	var err error
 
 	for update := range updates {
 		var resp string
@@ -37,6 +50,7 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 
 			switch {
 			case update.Message.Text == "/headers":
+				//todo fix if defaultCsvName is empty
 				res := helpers.GetCSVHeaders("internal/repository/" + defaultCsvName)
 				resp = strings.Join(res, ", ")
 			case strings.Contains(update.Message.Text, "/set_csv"):
@@ -62,18 +76,18 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 				}
 			case strings.Contains(update.Message.Text, "/ya_file"):
 				defaultExcelName := "tmp.xlsx"
-				yacl.GetYDFileByPath(os.Getenv("YDFILE"), defaultExcelName)
+				t.yacl.GetYDFileByPath(os.Getenv("YDFILE"), defaultExcelName)
 				helpers.ConvertToCSV(defaultExcelName)
 				resp = "File downloaded and converted to CSV"
 			case strings.Contains(update.Message.Text, "/ya_list"):
-				list := yacl.GetYDList()
+				list := t.yacl.GetYDList()
 				resp = strings.Join(list, ", ")
 			case strings.Contains(update.Message.Text, "/ya_upload"):
 				splStr := strings.Split(update.Message.Text, " ")
 				if len(splStr) < 1 {
 					resp = "Please specify filename"
 				} else {
-					err = yacl.SaveFileToYD(splStr[1])
+					err = t.yacl.SaveFileToYD(splStr[1])
 					if err != nil {
 						resp = "Error uploading file to Yandex Disk " + err.Error()
 					}
@@ -89,13 +103,36 @@ func StartBot(tgToken string, yacl *yandex.Client) {
 					"/ya_upload <filename> - upload file to Yandex Disk\n"
 			}
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, resp)
-			msg.ReplyToMessageID = update.Message.MessageID
+			lastChatID = update.Message.Chat.ID
+			lastMessageID = update.Message.MessageID
 
-			_, err = bot.Send(msg)
+			_, err = t.Send(update.Message.Chat.ID, update.Message.MessageID, resp)
 			if err != nil {
 				log.Println(err)
 			}
 		}
 	}
+	return nil
+}
+
+func StartBot(tgToken string, yacl *yandex.Client, isDebug bool) (*TGBot, error) {
+	bot, err := tgbotapi.NewBotAPI(tgToken)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bot.Debug = isDebug
+
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	tgbot := &TGBot{
+		yacl: yacl,
+		bot:  bot,
+		u:    u,
+	}
+
+	return tgbot, nil
 }

@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -42,13 +47,54 @@ func main() {
 	svc := service.NewService(yaClient)
 
 	r := setupRouter(svc)
-
-	go func() {
-		telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient)
-	}()
-
-	err := r.Run(":8080")
+	tgbot, err := telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient, true)
 	if err != nil {
 		panic(err)
+	}
+
+	go func() {
+		updChan := tgbot.GetUpdatesChan()
+		err = tgbot.HandleUpdate(updChan)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	go func() {
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	shutdownTimeout := 15 * time.Second
+	shutdown := make(chan os.Signal, 1)
+	endShutdown := make(chan struct{})
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	defer func(os.Signal) {
+		log.Println("received signal, start shutdown")
+		//todo deal with infinite shutdown
+		srv.Shutdown(ctx)
+		tgbot.SendToLastChat("Service is shutting down")
+		log.Println("received signal, end shutdown")
+		endShutdown <- struct{}{}
+	}(<-shutdown)
+
+	select {
+	case <-endShutdown:
+		log.Println("shuthown end, goodbye")
+		os.Exit(0)
+	case <-time.After(shutdownTimeout):
+		log.Println("shutdhown timeout, goodbye")
+		tgbot.SendToLastChat("Service is shutting down")
+
+		os.Exit(0)
 	}
 }

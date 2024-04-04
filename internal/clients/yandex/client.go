@@ -78,7 +78,7 @@ func (c *Client) SaveFileToYD(filename string) error {
 	put, err := c.resty.R().SetHeaders(headers).SetBody(fileData).Put(respUrl.Href)
 	if err != nil {
 		fmt.Println(err)
-		fmt.Println(put.StatusCode())
+		fmt.Printf("%+v", put)
 	}
 	return err
 }
