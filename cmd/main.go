@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -24,9 +25,40 @@ func setupRouter(svc *service.Service) *gin.Engine {
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
+	//todo create range handler
 	r.GET("/ya_list", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": svc.GetYaList(),
+		})
+	})
+	r.GET("/headers", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.GetHeaders(),
+		})
+	})
+	r.GET("/set_csv", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.SetDefaultCsv(c.Query("filename")),
+		})
+	})
+	r.GET("/list_csv", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.ListCsv(),
+		})
+	})
+	r.GET("/add", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.Add(c.Query("header"), c.Query("value")),
+		})
+	})
+	r.GET("/ya_file", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.YAFile(c.Query("filename")),
+		})
+	})
+	r.GET("/ya_upload", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": svc.YAUpload(c.Query("filename")),
 		})
 	})
 	r.GET("/", func(c *gin.Context) {
@@ -66,35 +98,28 @@ func main() {
 	}
 
 	go func() {
-		// service connections
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
 
-	shutdownTimeout := 15 * time.Second
-	shutdown := make(chan os.Signal, 1)
-	endShutdown := make(chan struct{})
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	quit := make(chan os.Signal)
+
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	defer func(os.Signal) {
-		log.Println("received signal, start shutdown")
-		//todo deal with infinite shutdown
-		srv.Shutdown(ctx)
-		tgbot.SendToLastChat("Service is shutting down")
-		log.Println("received signal, end shutdown")
-		endShutdown <- struct{}{}
-	}(<-shutdown)
-
-	select {
-	case <-endShutdown:
-		log.Println("shuthown end, goodbye")
-		os.Exit(0)
-	case <-time.After(shutdownTimeout):
-		log.Println("shutdhown timeout, goodbye")
-		tgbot.SendToLastChat("Service is shutting down")
-
-		os.Exit(0)
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+		tgbot.SendToLastChat("Service is shutting down with error")
 	}
+	// catching ctx.Done(). timeout of 5 seconds.
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+		tgbot.SendToLastChat("Service is shutting down by timeout")
+	}
+	log.Println("Server exiting")
 }
