@@ -79,7 +79,7 @@ func main() {
 	svc := service.NewService(yaClient)
 
 	r := setupRouter(svc)
-	tgbot, err := telegram.StartBot(os.Getenv("TG_SECRET_KEY"), yaClient, true)
+	tgbot, err := telegram.StartBot(os.Getenv("TG_SECRET_KEY"), svc, true)
 	if err != nil {
 		panic(err)
 	}
@@ -112,8 +112,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown:", err)
 		tgbot.SendToLastChat("Service is shutting down with error")
+		log.Fatal("Server Shutdown:", err)
 	}
 	// catching ctx.Done(). timeout of 5 seconds.
 	select {
