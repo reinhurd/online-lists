@@ -7,6 +7,7 @@ import (
 
 	"online-lists/internal/clients/yandex"
 	"online-lists/internal/helpers"
+	"online-lists/internal/models"
 )
 
 var defaultCsvName string
@@ -20,7 +21,7 @@ func (s *Service) GetYaList() []string {
 }
 
 func (s *Service) GetHeaders() string {
-	res := helpers.GetCSVHeaders("internal/repository/" + defaultCsvName)
+	res := helpers.GetCSVHeaders(models.FileFolder + defaultCsvName)
 	return strings.Join(res, ", ")
 }
 
@@ -42,7 +43,7 @@ func (s *Service) Add(header, value string) string {
 	if defaultCsvName == "" {
 		resp = "Set default csv filename first"
 	} else {
-		err := helpers.InsertNewValueUnderHeader("internal/repository/"+defaultCsvName, header, value)
+		err := helpers.InsertNewValueUnderHeader(models.FileFolder+defaultCsvName, header, value)
 		if err != nil {
 			fmt.Println(err)
 		}

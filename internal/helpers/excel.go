@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/xuri/excelize/v2"
+	"online-lists/internal/models"
 )
 
 func ReadXLSX(sheetname string) {
@@ -38,7 +39,7 @@ func ReadXLSX(sheetname string) {
 }
 
 func ConvertToCSV(excelName string) {
-	f := openExcel("internal/repository/" + excelName)
+	f := openExcel(models.FileFolder + excelName)
 
 	worksheets := f.GetSheetList()
 
@@ -74,7 +75,7 @@ func createCSV(f *excelize.File, worksheet string) {
 		return
 	}
 
-	csvFile, csvErr := os.Create("internal/repository/" + transliterateCyrillicToEnglish(worksheet) + ".csv")
+	csvFile, csvErr := os.Create(models.FileFolder + transliterateCyrillicToEnglish(worksheet) + ".csv")
 	if csvErr != nil {
 		fmt.Println(csvErr)
 	}
@@ -239,7 +240,7 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 }
 
 func GetCSVFiles() ([]string, error) {
-	files, err := os.ReadDir("internal/repository")
+	files, err := os.ReadDir(models.FileFolder)
 	if err != nil {
 		return nil, err
 	}

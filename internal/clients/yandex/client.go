@@ -49,14 +49,14 @@ func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
 	err = json.Unmarshal(res.Body(), &item)
 	//download file by link
 	res, err = c.resty.R().SetHeaders(headers).Get(item.File)
-	err = os.WriteFile("internal/repository/"+defaultExcelName, res.Body(), 0644)
+	err = os.WriteFile(models.FileFolder+defaultExcelName, res.Body(), 0644)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (c *Client) SaveFileToYD(filename string) error {
-	fileData, err := os.Open("internal/repository/" + filename)
+	fileData, err := os.Open(models.FileFolder + filename)
 	if err != nil {
 		panic(err)
 	}
