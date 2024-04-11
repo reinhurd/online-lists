@@ -27,8 +27,6 @@ func transliterateCyrillicToEnglish(input string) string {
 	for _, char := range input {
 		if translit, ok := translitMap[char]; ok {
 			result.WriteString(translit)
-		} else {
-			// Append none if no mapping is found
 		}
 	}
 

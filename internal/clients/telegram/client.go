@@ -55,9 +55,12 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 				splStr := strings.Split(update.Message.Text, " ")
 				resp = t.olSvc.Add(splStr[1], splStr[2])
 			case strings.Contains(update.Message.Text, "/ya_file"):
-				//todo deal with defaultExcelName
-				defaultExcelName := "tmp.xlsx"
-				resp = t.olSvc.YAFile(defaultExcelName)
+				var filename string
+				splStr := strings.Split(update.Message.Text, " ")
+				if len(splStr) > 1 {
+					filename = splStr[1]
+				}
+				resp = t.olSvc.YAFile(filename)
 			case strings.Contains(update.Message.Text, "/ya_list"):
 				resp = strings.Join(t.olSvc.GetYaList(), ", ")
 			case strings.Contains(update.Message.Text, "/ya_upload"):

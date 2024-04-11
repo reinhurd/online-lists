@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/xuri/excelize/v2"
-	"online-lists/internal/models"
+	"online-lists/internal/config"
 )
 
 func ReadXLSX(sheetname string) {
@@ -39,7 +39,7 @@ func ReadXLSX(sheetname string) {
 }
 
 func ConvertToCSV(excelName string) {
-	f := openExcel(models.FileFolder + excelName)
+	f := openExcel(config.FileFolder + excelName)
 
 	worksheets := f.GetSheetList()
 
@@ -59,7 +59,6 @@ func openExcel(fileName string) *excelize.File {
 		if err = f.Close(); err != nil {
 			fmt.Println(err)
 		}
-		return
 	}()
 
 	return f
@@ -75,7 +74,7 @@ func createCSV(f *excelize.File, worksheet string) {
 		return
 	}
 
-	csvFile, csvErr := os.Create(models.FileFolder + transliterateCyrillicToEnglish(worksheet) + ".csv")
+	csvFile, csvErr := os.Create(config.FileFolder + transliterateCyrillicToEnglish(worksheet) + ".csv")
 	if csvErr != nil {
 		fmt.Println(csvErr)
 	}
@@ -140,7 +139,10 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 	for i, record := range records {
 		for j, field := range record {
 			cell, _ := excelize.CoordinatesToCellName(j+1, i+1)
-			xlsx.SetCellValue("Sheet1", cell, field)
+			err = xlsx.SetCellValue("Sheet1", cell, field)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -240,7 +242,7 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 }
 
 func GetCSVFiles() ([]string, error) {
-	files, err := os.ReadDir(models.FileFolder)
+	files, err := os.ReadDir(config.FileFolder)
 	if err != nil {
 		return nil, err
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"online-lists/internal/clients/telegram"
 	"online-lists/internal/clients/yandex"
+	"online-lists/internal/config"
 	"online-lists/internal/helpers"
 	"online-lists/internal/service"
 )
@@ -93,7 +94,7 @@ func main() {
 	}()
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    config.DefaultPort,
 		Handler: r,
 	}
 
@@ -111,15 +112,21 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		tgbot.SendToLastChat("Service is shutting down with error")
+	if err = srv.Shutdown(ctx); err != nil {
+		_, errTg := tgbot.SendToLastChat("Service is shutting down with error")
+		if errTg != nil {
+			log.Println("Error sending to telegram:", errTg)
+		}
 		log.Fatal("Server Shutdown:", err)
 	}
 	// catching ctx.Done(). timeout of 5 seconds.
 	select {
 	case <-ctx.Done():
 		log.Println("timeout of 5 seconds.")
-		tgbot.SendToLastChat("Service is shutting down by timeout")
+		_, errTg := tgbot.SendToLastChat("Service is shutting down by timeout")
+		if errTg != nil {
+			log.Println("Error sending to telegram:", errTg)
+		}
 	}
 	log.Println("Server exiting")
 }

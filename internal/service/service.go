@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"online-lists/internal/clients/yandex"
+	"online-lists/internal/config"
 	"online-lists/internal/helpers"
-	"online-lists/internal/models"
 )
 
 var defaultCsvName string
@@ -21,7 +21,7 @@ func (s *Service) GetYaList() []string {
 }
 
 func (s *Service) GetHeaders() string {
-	res := helpers.GetCSVHeaders(models.FileFolder + defaultCsvName)
+	res := helpers.GetCSVHeaders(config.FileFolder + defaultCsvName)
 	return strings.Join(res, ", ")
 }
 
@@ -43,7 +43,7 @@ func (s *Service) Add(header, value string) string {
 	if defaultCsvName == "" {
 		resp = "Set default csv filename first"
 	} else {
-		err := helpers.InsertNewValueUnderHeader(models.FileFolder+defaultCsvName, header, value)
+		err := helpers.InsertNewValueUnderHeader(config.FileFolder+defaultCsvName, header, value)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -53,9 +53,11 @@ func (s *Service) Add(header, value string) string {
 }
 
 func (s *Service) YAFile(filename string) string {
-	defaultExcelName := "tmp.xlsx"
-	s.yaClient.GetYDFileByPath(os.Getenv("YDFILE"), defaultExcelName)
-	helpers.ConvertToCSV(defaultExcelName)
+	if filename == "" {
+		filename = "tmp.xlsx"
+	}
+	s.yaClient.GetYDFileByPath(os.Getenv("YDFILE"), filename)
+	helpers.ConvertToCSV(filename)
 
 	return "File downloaded and converted to CSV"
 }
