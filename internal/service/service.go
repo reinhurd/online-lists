@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"online-lists/internal/clients/yandex"
-	"online-lists/internal/config"
 	"online-lists/internal/helpers"
 )
 
 var defaultCsvName string
 
 type Service struct {
-	yaClient *yandex.Client
+	yaClient   *yandex.Client
+	fileFolder string
 }
 
 func (s *Service) GetYaList() []string {
@@ -21,7 +21,10 @@ func (s *Service) GetYaList() []string {
 }
 
 func (s *Service) GetHeaders() string {
-	res := helpers.GetCSVHeaders(config.FileFolder + defaultCsvName)
+	if defaultCsvName == "" {
+		return "Set default csv filename first"
+	}
+	res := helpers.GetCSVHeaders(s.fileFolder + defaultCsvName)
 	return strings.Join(res, ", ")
 }
 
@@ -43,7 +46,7 @@ func (s *Service) Add(header, value string) string {
 	if defaultCsvName == "" {
 		resp = "Set default csv filename first"
 	} else {
-		err := helpers.InsertNewValueUnderHeader(config.FileFolder+defaultCsvName, header, value)
+		err := helpers.InsertNewValueUnderHeader(s.fileFolder+defaultCsvName, header, value)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -73,6 +76,9 @@ func (s *Service) YAUpload(filename string) string {
 	return resp
 }
 
-func NewService(yaClient *yandex.Client) *Service {
-	return &Service{yaClient: yaClient}
+func NewService(yaClient *yandex.Client, fileFolder string) *Service {
+	return &Service{
+		yaClient:   yaClient,
+		fileFolder: fileFolder,
+	}
 }

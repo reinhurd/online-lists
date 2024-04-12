@@ -44,7 +44,6 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 
 			switch {
 			case update.Message.Text == "/headers":
-				//todo fix if defaultCsvName is empty
 				resp = t.olSvc.GetHeaders()
 			case strings.Contains(update.Message.Text, "/set_csv"):
 				splStr := strings.Split(update.Message.Text, " ")

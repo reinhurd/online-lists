@@ -6,13 +6,15 @@ import (
 	"os"
 
 	"github.com/go-resty/resty/v2"
-	"online-lists/internal/config"
 	"online-lists/internal/models"
 )
 
+const YAFileCountLimit = "1000"
+
 type Client struct {
-	resty *resty.Client
-	token string
+	resty      *resty.Client
+	token      string
+	fileFolder string
 }
 
 func (c *Client) GetYDToken() {
@@ -25,11 +27,14 @@ func (c *Client) GetYDList() []string {
 		"Accept":        "application/json",
 		"Authorization": "OAuth " + c.token,
 	}
-	res, err := c.resty.R().SetHeaders(headers).Get("https://cloud-api.yandex.net/v1/disk/resources/files?limit=" + config.YAFileCountLimit)
+	res, err := c.resty.R().SetHeaders(headers).Get("https://cloud-api.yandex.net/v1/disk/resources/files?limit=" + YAFileCountLimit)
 	if err != nil {
 		panic(err)
 	}
 	err = json.Unmarshal(res.Body(), &list)
+	if err != nil {
+		panic(err)
+	}
 	var names []string
 	for _, item := range list.Items {
 		names = append(names, item.Name)
@@ -48,16 +53,22 @@ func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
 		panic(err)
 	}
 	err = json.Unmarshal(res.Body(), &item)
+	if err != nil {
+		panic(err)
+	}
 	//download file by link
 	res, err = c.resty.R().SetHeaders(headers).Get(item.File)
-	err = os.WriteFile(config.FileFolder+defaultExcelName, res.Body(), 0644)
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(c.fileFolder+defaultExcelName, res.Body(), 0644)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (c *Client) SaveFileToYD(filename string) error {
-	fileData, err := os.Open(config.FileFolder + filename)
+	fileData, err := os.Open(c.fileFolder + filename)
 	if err != nil {
 		panic(err)
 	}
@@ -87,9 +98,11 @@ func (c *Client) SaveFileToYD(filename string) error {
 func NewClient(
 	r *resty.Client,
 	token string,
+	fileFolder string,
 ) *Client {
 	return &Client{
-		resty: r,
-		token: token,
+		resty:      r,
+		token:      token,
+		fileFolder: fileFolder,
 	}
 }
