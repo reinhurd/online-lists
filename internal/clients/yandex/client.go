@@ -21,7 +21,7 @@ func (c *Client) GetYDToken() {
 	//TODO implement
 }
 
-func (c *Client) GetYDList() []string {
+func (c *Client) GetYDList() ([]string, error) {
 	list := models.YADISKList{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -33,16 +33,16 @@ func (c *Client) GetYDList() []string {
 	}
 	err = json.Unmarshal(res.Body(), &list)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	var names []string
 	for _, item := range list.Items {
 		names = append(names, item.Name)
 	}
-	return names
+	return names, nil
 }
 
-func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
+func (c *Client) GetYDFileByPath(path, defaultExcelName string) error {
 	item := models.YDItem{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -50,27 +50,28 @@ func (c *Client) GetYDFileByPath(path, defaultExcelName string) {
 	}
 	res, err := c.resty.R().SetHeaders(headers).Get("https://cloud-api.yandex.net/v1/disk/resources?path=" + path)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = json.Unmarshal(res.Body(), &item)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	//download file by link
 	res, err = c.resty.R().SetHeaders(headers).Get(item.File)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = os.WriteFile(c.fileFolder+defaultExcelName, res.Body(), 0644)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
 func (c *Client) SaveFileToYD(filename string) error {
 	fileData, err := os.Open(c.fileFolder + filename)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -80,17 +81,16 @@ func (c *Client) SaveFileToYD(filename string) error {
 	respUrl := models.YDUploadResponse{}
 	urlToUpload, err := c.resty.R().SetHeaders(headers).Get("https://cloud-api.yandex.net/v1/disk/resources/upload?path=" + pathToUpload)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = json.Unmarshal(urlToUpload.Body(), &respUrl)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	//todo deal with unsupported protocol error when uploading file
 	put, err := c.resty.R().SetHeaders(headers).SetBody(fileData).Put(respUrl.Href)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Printf("%+v", put)
+		err = fmt.Errorf("error uploading file: %w with response: %+v", err, put)
 	}
 	return err
 }

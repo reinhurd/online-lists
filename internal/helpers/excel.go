@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,16 +11,15 @@ import (
 	"online-lists/internal/config"
 )
 
-func ReadXLSX(sheetname string) {
+func ReadXLSX(sheetname string) error {
 	f, err := excelize.OpenFile("tmp.xlsx")
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer func() {
 		// Close the spreadsheet.
-		if err := f.Close(); err != nil {
-			fmt.Println(err)
+		if err = f.Close(); err != nil {
+			panic(err)
 		}
 	}()
 	sl := f.GetSheetList()
@@ -27,8 +27,7 @@ func ReadXLSX(sheetname string) {
 	// Get all the rows in the Sheet1.
 	rows, err := f.GetRows(sheetname)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	for _, row := range rows {
 		for _, colCell := range row {
@@ -36,23 +35,30 @@ func ReadXLSX(sheetname string) {
 		}
 		fmt.Println()
 	}
+	return nil
 }
 
-func ConvertToCSV(excelName string) {
-	f := openExcel(config.FileFolder + excelName)
+func ConvertToCSV(excelName string) error {
+	f, err := openExcel(config.FileFolder + excelName)
+	if err != nil {
+		return err
+	}
 
 	worksheets := f.GetSheetList()
 
 	for i := range worksheets {
-		createCSV(f, worksheets[i])
+		err = createCSV(f, worksheets[i])
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func openExcel(fileName string) *excelize.File {
+func openExcel(fileName string) (*excelize.File, error) {
 	f, err := excelize.OpenFile(fileName)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		return nil, err
 	}
 	defer func() {
 		// Close the spreadsheet.
@@ -61,22 +67,22 @@ func openExcel(fileName string) *excelize.File {
 		}
 	}()
 
-	return f
+	return f, nil
 }
 
-func createCSV(f *excelize.File, worksheet string) {
+func createCSV(f *excelize.File, worksheet string) error {
 	allRows, arErr := f.GetRows(worksheet)
 	if arErr != nil {
-		panic(arErr)
+		return arErr
 	}
 	//don't write if sheet is empty
 	if len(allRows) == 0 {
-		return
+		return errors.New("sheet is empty")
 	}
 
 	csvFile, csvErr := os.Create(config.FileFolder + transliterateCyrillicToEnglish(worksheet) + ".csv")
 	if csvErr != nil {
-		fmt.Println(csvErr)
+		return csvErr
 	}
 	defer func() {
 		if csvErr = csvFile.Close(); csvErr != nil {
@@ -88,25 +94,31 @@ func createCSV(f *excelize.File, worksheet string) {
 
 	var writerErr = writer.WriteAll(allRows)
 	if writerErr != nil {
-		fmt.Println(writerErr)
+		return writerErr
 	}
+	return nil
 }
 
-func GetCSVHeaders(csvFile string) []string {
+func GetCSVHeaders(csvFile string) ([]string, error) {
 	f, err := os.Open(csvFile)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	r := csv.NewReader(f)
 	r.FieldsPerRecord = -1
 	records, err := r.ReadAll()
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
-	return records[0]
+	return records[0], nil
 }
 
 func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
@@ -114,7 +126,12 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	// Create a new reader for the CSV file
 	r := csv.NewReader(f)
@@ -134,7 +151,6 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 	// Set the active sheet of the workbook
 	xlsx.SetActiveSheet(index)
 
-	fmt.Println(records)
 	// Iterate through records to populate the sheet
 	for i, record := range records {
 		for j, field := range record {
@@ -163,7 +179,12 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 		fmt.Println("Error opening file:", err)
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	// Create a new temp file to write modifications
 	tempFile, err := os.Create(tempFileName)
@@ -171,7 +192,12 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 		fmt.Println("Error creating temp file:", err)
 		return err
 	}
-	defer tempFile.Close()
+	defer func() {
+		err = tempFile.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	reader := csv.NewReader(file)
 	reader.FieldsPerRecord = -1
@@ -180,8 +206,7 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 	// Read the headers
 	headers, err := reader.Read()
 	if err != nil {
-		fmt.Println("Error reading headers:", err)
-		return err
+		return fmt.Errorf("error reading headers: %w", err)
 	}
 
 	// Find the index of the target header
@@ -194,14 +219,12 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 	}
 
 	if targetIndex == -1 {
-		fmt.Println("Header not found")
-		return err
+		return fmt.Errorf("header not found: %s", header)
 	}
 
 	// Write headers to the temp file
 	if err = writer.Write(headers); err != nil {
-		fmt.Println("Error writing headers:", err)
-		return err
+		return fmt.Errorf("error writing headers: %w", err)
 	}
 
 	// Read and modify rows
@@ -218,25 +241,26 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 			isSaved = true
 		}
 		if err = writer.Write(record); err != nil {
-			fmt.Println("Error writing record:", err)
-			return err
+			return fmt.Errorf("error writing record: %w", err)
 		}
 	}
 
 	writer.Flush()
 	if err = writer.Error(); err != nil {
-		fmt.Println("Error flushing writer:", err)
+		return fmt.Errorf("error flushing writer: %w", err)
+	}
+
+	err = tempFile.Close()
+	if err != nil {
+		return err
+	}
+	err = file.Close()
+	if err != nil {
 		return err
 	}
 
-	// Close the temp file and original file before renaming
-	tempFile.Close()
-	file.Close()
-
-	// Replace the original file with the modified file
 	if err = os.Rename(tempFileName, csvFile); err != nil {
-		fmt.Println("Error replacing the original file:", err)
-		return err
+		return fmt.Errorf("error renaming file: %w", err)
 	}
 	return nil
 }
