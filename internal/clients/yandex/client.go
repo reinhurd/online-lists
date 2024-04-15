@@ -17,10 +17,6 @@ type Client struct {
 	fileFolder string
 }
 
-func (c *Client) GetYDToken() {
-	//TODO implement
-}
-
 func (c *Client) GetYDList() ([]string, error) {
 	list := models.YADISKList{}
 	headers := map[string]string{

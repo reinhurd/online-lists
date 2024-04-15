@@ -11,8 +11,7 @@ App for maintaining lists through different clients
 2. Follow the instructions to create (/newbot and so on)
 3. Get the token and put it in secret.env
 
-#### Work in progress
-
-- Add deployment logic
-- Add a web client
-- Add message to tg when app is closing
+## How to create valid yandex app for working with disk
+1. You need create app strongly by the link https://oauth.yandex.ru/client/new - only there you can add custom right from the official docs https://yandex.ru/dev/disk-api/doc/ru/concepts/quickstart. It's important, because you can't find valid creation link in the docs.
+2. Add rights to the app, and authorize through it
+3. Copy the token and put it in secret.env

@@ -2,18 +2,18 @@ package service
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"online-lists/internal/clients/yandex"
 	"online-lists/internal/helpers"
+
+	"github.com/rs/zerolog/log"
 )
 
 var defaultCsvName string
 
 type Service struct {
-	logger     *log.Logger
 	yaClient   *yandex.Client
 	fileFolder string
 }
@@ -21,7 +21,7 @@ type Service struct {
 func (s *Service) GetYaList() []string {
 	res, err := s.yaClient.GetYDList()
 	if err != nil {
-		s.logger.Println(err)
+		log.Error().Err(err).Msg("Error getting list from Yandex Disk")
 		return nil
 	}
 	return res
@@ -33,7 +33,7 @@ func (s *Service) GetHeaders() string {
 	}
 	res, err := helpers.GetCSVHeaders(s.fileFolder + defaultCsvName)
 	if err != nil {
-		s.logger.Println(err)
+		log.Error().Err(err).Msg("Error getting headers")
 		return fmt.Sprintf("Error getting headers %s", err)
 	}
 	return strings.Join(res, ", ")
@@ -47,7 +47,7 @@ func (s *Service) SetDefaultCsv(csvName string) string {
 func (s *Service) ListCsv() string {
 	files, err := helpers.GetCSVFiles()
 	if err != nil {
-		s.logger.Println(err)
+		log.Error().Err(err).Msg("Error getting csv files")
 		return fmt.Sprintf("Error getting csv files %s", err)
 	}
 	return strings.Join(files, ", ")
@@ -60,7 +60,7 @@ func (s *Service) Add(header, value string) string {
 	} else {
 		err := helpers.InsertNewValueUnderHeader(s.fileFolder+defaultCsvName, header, value)
 		if err != nil {
-			s.logger.Println(err)
+			log.Error().Err(err).Msg("Error adding value")
 			return fmt.Sprintf("Error adding value %s", err)
 		}
 		resp = fmt.Sprintf("Added %s under %s", value, header)
