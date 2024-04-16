@@ -1,10 +1,10 @@
 package telegram
 
 import (
-	"log"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog/log"
 	"online-lists/internal/service"
 )
 
@@ -38,7 +38,7 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 	for update := range updates {
 		var resp string
 		if update.Message != nil { // If we got a message
-			log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+			log.Info().Msgf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 			resp = "Hello, " + update.Message.From.UserName + "!" + " You said: " + update.Message.Text
 
@@ -83,7 +83,7 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 
 			_, err = t.Send(update.Message.Chat.ID, update.Message.MessageID, resp)
 			if err != nil {
-				log.Println(err)
+				log.Err(err).Msg("send error")
 			}
 		}
 	}
@@ -93,12 +93,12 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 func StartBot(tgToken string, olSvc *service.Service, isDebug bool) (*TGBot, error) {
 	bot, err := tgbotapi.NewBotAPI(tgToken)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal().Err(err).Msg("tgbotapi.NewBotAPI doesn't start")
 	}
 
 	bot.Debug = isDebug
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Info().Msgf("Authorized on account %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

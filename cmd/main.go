@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +16,8 @@ import (
 	"online-lists/internal/config"
 	"online-lists/internal/service"
 	"online-lists/internal/transport"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatal().Err(err)
 		}
 	}()
 
@@ -57,23 +58,23 @@ func main() {
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutdown Server ...")
+	log.Info().Msg("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err = srv.Shutdown(ctx); err != nil {
 		_, errTg := tgbot.SendToLastChat("Service is shutting down with error")
 		if errTg != nil {
-			log.Println("Error sending to telegram:", errTg)
+			log.Info().Msgf("Error sending to telegram: %v", errTg)
 		}
-		log.Fatal("Server Shutdown:", err)
+		log.Fatal().Err(err)
 	}
 	// catching ctx.Done(). timeout of 5 seconds.
 	<-ctx.Done()
-	log.Println("timeout of 5 seconds.")
+	log.Info().Msg("timeout of 5 seconds")
 	_, errTg := tgbot.SendToLastChat("Service is shutting down by timeout")
 	if errTg != nil {
-		log.Println("Error sending to telegram:", errTg)
+		log.Info().Msgf("Error sending to telegram: %v", errTg)
 	}
-	log.Println("Server exiting")
+	log.Info().Msg("Server exiting")
 }
