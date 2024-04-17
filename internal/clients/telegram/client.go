@@ -64,7 +64,7 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 				resp = strings.Join(t.olSvc.GetYaList(), ", ")
 			case strings.Contains(update.Message.Text, "/ya_upload"):
 				splStr := strings.Split(update.Message.Text, " ")
-				if len(splStr) < 1 {
+				if len(splStr) < 2 {
 					resp = "Please specify filename"
 				} else {
 					resp = t.olSvc.YAUpload(splStr[1])

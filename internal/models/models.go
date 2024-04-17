@@ -13,6 +13,9 @@ type YDUploadResponse struct {
 	Href        string `json:"href"`
 	Method      string `json:"method"`
 	Templated   bool   `json:"templated"`
+	Message     string `json:"message"`
+	Description string `json:"description"`
+	Error       string `json:"error"`
 }
 
 type YDItem struct {

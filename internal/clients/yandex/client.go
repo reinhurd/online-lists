@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog/log"
 	"online-lists/internal/models"
 )
 
@@ -83,10 +84,13 @@ func (c *Client) SaveFileToYD(filename string) error {
 	if err != nil {
 		return err
 	}
-	//todo deal with unsupported protocol error when uploading file
+	if respUrl.Error != "" {
+		return fmt.Errorf("error getting upload link: %s", respUrl.Error)
+	}
 	put, err := c.resty.R().SetHeaders(headers).SetBody(fileData).Put(respUrl.Href)
 	if err != nil {
-		err = fmt.Errorf("error uploading file: %w with response: %+v", err, put)
+		err = fmt.Errorf("error uploading file: %s", err)
+		log.Err(err).Msgf("error uploading file: %+v", put)
 	}
 	return err
 }
