@@ -69,7 +69,7 @@ func main() {
 		}
 		log.Fatal().Err(err)
 	}
-	// catching ctx.Done(). timeout of 5 seconds.
+
 	<-ctx.Done()
 	log.Info().Msg("timeout of 5 seconds")
 	_, errTg := tgbot.SendToLastChat("Service is shutting down by timeout")

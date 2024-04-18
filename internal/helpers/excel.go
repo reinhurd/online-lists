@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"github.com/xuri/excelize/v2"
 	"online-lists/internal/config"
 )
@@ -17,23 +18,21 @@ func ReadXLSX(sheetname string) error {
 		return err
 	}
 	defer func() {
-		// Close the spreadsheet.
 		if err = f.Close(); err != nil {
 			panic(err)
 		}
 	}()
 	sl := f.GetSheetList()
-	fmt.Println(sl)
-	// Get all the rows in the Sheet1.
+	log.Info().Msgf("Sheets: %v", sl)
+
 	rows, err := f.GetRows(sheetname)
 	if err != nil {
 		return err
 	}
 	for _, row := range rows {
 		for _, colCell := range row {
-			fmt.Print(colCell, "\t")
+			log.Info().Msgf("%s\t", colCell)
 		}
-		fmt.Println()
 	}
 	return nil
 }
@@ -61,9 +60,8 @@ func openExcel(fileName string) (*excelize.File, error) {
 		return nil, err
 	}
 	defer func() {
-		// Close the spreadsheet.
 		if err = f.Close(); err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("Error closing file")
 		}
 	}()
 
@@ -107,7 +105,7 @@ func GetCSVHeaders(csvFile string) ([]string, error) {
 	defer func() {
 		err = f.Close()
 		if err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("Error closing file")
 		}
 	}()
 
@@ -129,29 +127,23 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 	defer func() {
 		err = f.Close()
 		if err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("Error closing file")
 		}
 	}()
 
-	// Create a new reader for the CSV file
 	r := csv.NewReader(f)
 	// Adjust the CSV reader settings if necessary (e.g., different delimiter)
 	// r.Comma = ';' // If your CSV uses semicolons
 	r.FieldsPerRecord = -1
-	// Read all records at once
 	records, err := r.ReadAll()
 	if err != nil {
 		return err
 	}
 
-	// Create a new Excel file
 	xlsx := excelize.NewFile()
-	// Create a new sheet named "Sheet1"
 	index, _ := xlsx.NewSheet("Sheet1")
-	// Set the active sheet of the workbook
 	xlsx.SetActiveSheet(index)
 
-	// Iterate through records to populate the sheet
 	for i, record := range records {
 		for j, field := range record {
 			cell, _ := excelize.CoordinatesToCellName(j+1, i+1)
@@ -162,7 +154,6 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 		}
 	}
 
-	// Save the XLSX file
 	if err = xlsx.SaveAs(xlsxFile); err != nil {
 		return err
 	}
@@ -173,29 +164,27 @@ func ConvertCSVtoXLSX(csvFile, xlsxFile string) error {
 func InsertNewValueUnderHeader(csvFile, header, value string) error {
 	tempFileName := "tempfile.csv"
 
-	// Open the original CSV file
 	file, err := os.Open(csvFile)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+		log.Err(err).Msg("Error opening file")
 		return err
 	}
 	defer func() {
 		err = file.Close()
 		if err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("Error closing file")
 		}
 	}()
 
-	// Create a new temp file to write modifications
 	tempFile, err := os.Create(tempFileName)
 	if err != nil {
-		fmt.Println("Error creating temp file:", err)
+		log.Err(err).Msg("Error creating temp file")
 		return err
 	}
 	defer func() {
 		err = tempFile.Close()
 		if err != nil {
-			fmt.Println(err)
+			log.Err(err).Msg("Error closing temp file")
 		}
 	}()
 
@@ -203,7 +192,6 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 	reader.FieldsPerRecord = -1
 	writer := csv.NewWriter(tempFile)
 
-	// Read the headers
 	headers, err := reader.Read()
 	if err != nil {
 		return fmt.Errorf("error reading headers: %w", err)
@@ -222,15 +210,13 @@ func InsertNewValueUnderHeader(csvFile, header, value string) error {
 		return fmt.Errorf("header not found: %s", header)
 	}
 
-	// Write headers to the temp file
 	if err = writer.Write(headers); err != nil {
 		return fmt.Errorf("error writing headers: %w", err)
 	}
 
-	// Read and modify rows
 	records, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println("Error reading records:", err)
+		log.Err(err).Msg("Error reading records")
 		return err
 	}
 
