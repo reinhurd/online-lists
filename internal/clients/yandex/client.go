@@ -39,7 +39,7 @@ func (c *Client) GetYDList() ([]string, error) {
 	return names, nil
 }
 
-func (c *Client) GetYDFileByPath(path, defaultExcelName string) error {
+func (c *Client) GetYDFileByPath(path, filename string) error {
 	item := models.YDItem{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -58,7 +58,7 @@ func (c *Client) GetYDFileByPath(path, defaultExcelName string) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(c.fileFolder+defaultExcelName, res.Body(), 0644)
+	err = os.WriteFile(c.fileFolder+filename, res.Body(), 0644)
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,7 @@ type Service struct {
 }
 
 func (s *Service) GetYaList() []string {
+	//todo show paths and names in response, not all info
 	res, err := s.yaClient.GetYDList()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting list from Yandex Disk")
@@ -68,11 +69,15 @@ func (s *Service) Add(header, value string) string {
 	return resp
 }
 
-func (s *Service) YAFile(filename string) string {
+func (s *Service) YAFile(filename, path string) string {
+	// todo add possibility to save not only xlsx files
 	if filename == "" {
 		filename = "tmp.xlsx"
 	}
-	err := s.yaClient.GetYDFileByPath(os.Getenv("YDFILE"), filename)
+	if path == "" {
+		path = os.Getenv("YDFILE")
+	}
+	err := s.yaClient.GetYDFileByPath(path, filename)
 	if err != nil {
 		return fmt.Sprintf("Error downloading file from Yandex Disk %s", err)
 	}

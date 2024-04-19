@@ -40,7 +40,7 @@ func SetupRouter(svc ListService) *gin.Engine {
 	})
 	r.GET("/ya_file", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": svc.YAFile(c.Query("filename")),
+			"message": svc.YAFile(c.Query("filename"), c.Query("path")),
 		})
 	})
 	r.GET("/ya_upload", func(c *gin.Context) {

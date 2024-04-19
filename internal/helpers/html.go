@@ -30,7 +30,12 @@ func GetHomeTemplate() string {
 		</div>
 	</form>
 	<form action="/ya_file" method="get">
-		<div><strong>/ya_file</strong> - download file from Yandex Disk <button type="submit">Visit API</button></div>
+		<div>
+			<strong>/ya_file</strong> - download file from Yandex Disk 
+			<input type="text" name="filenameSaveAs" placeholder="FilenameSaveAs"/>
+			<input type="text" name="path" placeholder="Path"/>
+			<button type="submit">Visit API</button>
+		</div>
 	</form>
 	<form action="/ya_list" method="get">
 		<div><strong>/ya_list</strong> - list files from Yandex Disk <button type="submit">Visit API</button></div>

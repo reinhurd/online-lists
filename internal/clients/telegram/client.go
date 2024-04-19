@@ -54,12 +54,15 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 				splStr := strings.Split(update.Message.Text, " ")
 				resp = t.olSvc.Add(splStr[1], splStr[2])
 			case strings.Contains(update.Message.Text, "/ya_file"):
-				var filename string
+				var filename, path string
 				splStr := strings.Split(update.Message.Text, " ")
 				if len(splStr) > 1 {
 					filename = splStr[1]
 				}
-				resp = t.olSvc.YAFile(filename)
+				if len(splStr) > 2 {
+					path = splStr[2]
+				}
+				resp = t.olSvc.YAFile(filename, path)
 			case strings.Contains(update.Message.Text, "/ya_list"):
 				resp = strings.Join(t.olSvc.GetYaList(), ", ")
 			case strings.Contains(update.Message.Text, "/ya_upload"):
@@ -74,7 +77,7 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 					"/set_csv <filename> - set default csv\n" +
 					"/list_csv - list all csv files\n" +
 					"/add <header> <value> - add value under header\n" +
-					"/ya_file - download file from Yandex Disk\n" +
+					"/ya_file <filenameSaveAs> <path> - download file from Yandex Disk\n" +
 					"/ya_list - list files from Yandex Disk\n" +
 					"/ya_upload <filename> - upload file to Yandex Disk\n"
 			}
