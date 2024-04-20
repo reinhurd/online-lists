@@ -8,6 +8,10 @@ type YADISKList struct {
 	Offset int      `json:"offset"`
 }
 
+type YDListNamePath struct {
+	Path string `json:"path"`
+}
+
 type YDUploadResponse struct {
 	OperationID string `json:"operation_id"`
 	Href        string `json:"href"`

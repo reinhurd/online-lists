@@ -18,7 +18,7 @@ type Client struct {
 	fileFolder string
 }
 
-func (c *Client) GetYDList() ([]string, error) {
+func (c *Client) GetYDList() ([]models.YDListNamePath, error) {
 	list := models.YADISKList{}
 	headers := map[string]string{
 		"Accept":        "application/json",
@@ -32,11 +32,14 @@ func (c *Client) GetYDList() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var names []string
+
+	listFormatted := make([]models.YDListNamePath, 0, len(list.Items))
 	for _, item := range list.Items {
-		names = append(names, item.Name)
+		listFormatted = append(listFormatted, models.YDListNamePath{
+			Path: item.Path,
+		})
 	}
-	return names, nil
+	return listFormatted, nil
 }
 
 func (c *Client) GetYDFileByPath(path, filename string) error {

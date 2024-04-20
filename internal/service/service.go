@@ -5,10 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"online-lists/internal/clients/yandex"
 	"online-lists/internal/helpers"
-
-	"github.com/rs/zerolog/log"
 )
 
 var defaultCsvName string
@@ -19,13 +18,16 @@ type Service struct {
 }
 
 func (s *Service) GetYaList() []string {
-	//todo show paths and names in response, not all info
 	res, err := s.yaClient.GetYDList()
 	if err != nil {
 		log.Error().Err(err).Msg("Error getting list from Yandex Disk")
 		return nil
 	}
-	return res
+	resp := make([]string, 0, len(res))
+	for _, item := range res {
+		resp = append(resp, fmt.Sprintf("\n %s", item.Path))
+	}
+	return resp
 }
 
 func (s *Service) GetHeaders() string {

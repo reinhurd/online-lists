@@ -84,6 +84,16 @@ func (t *TGBot) HandleUpdate(updates tgbotapi.UpdatesChannel) error {
 
 			lastChatID = update.Message.Chat.ID
 
+			if len(resp) > 4095 {
+				// split message and send in parts
+				for len(resp) > 4095 {
+					_, err = t.Send(update.Message.Chat.ID, update.Message.MessageID, resp[:4095])
+					if err != nil {
+						log.Err(err).Msg("send error")
+					}
+					resp = resp[4095:]
+				}
+			}
 			_, err = t.Send(update.Message.Chat.ID, update.Message.MessageID, resp)
 			if err != nil {
 				log.Err(err).Msg("send error")
