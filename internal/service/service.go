@@ -71,17 +71,28 @@ func (s *Service) Add(header, value string) string {
 	return resp
 }
 
-func (s *Service) YAFile(filename, path string) string {
-	// todo add possibility to save not only xlsx files
-	if filename == "" {
-		filename = "tmp.xlsx"
-	}
+func (s *Service) DownloadYaFile(filename, path string) (string, error) {
+	var resp string
 	if path == "" {
 		path = os.Getenv("YDFILE")
 	}
 	err := s.yaClient.GetYDFileByPath(path, filename)
 	if err != nil {
-		return fmt.Sprintf("Error downloading file from Yandex Disk %s", err)
+		resp = "Error downloading file from Yandex Disk " + err.Error()
+	} else {
+		resp = "File downloaded from Yandex Disk"
+	}
+	return resp, err
+}
+
+// todo refactor to work with only xlsx and name accordingly
+func (s *Service) YAFile(filename, path string) string {
+	if filename == "" {
+		filename = "tmp.xlsx"
+	}
+	resp, err := s.DownloadYaFile(filename, path)
+	if err != nil {
+		return resp
 	}
 	err = helpers.ConvertToCSV(filename)
 	if err != nil {
