@@ -85,21 +85,24 @@ func (s *Service) DownloadYaFile(filename, path string) (string, error) {
 	return resp, err
 }
 
-// todo refactor to work with only xlsx and name accordingly
 func (s *Service) YAFile(filename, path string) string {
 	if filename == "" {
-		filename = "tmp.xlsx"
+		return "Filename is empty"
 	}
 	resp, err := s.DownloadYaFile(filename, path)
 	if err != nil {
 		return resp
 	}
-	err = helpers.ConvertToCSV(filename)
-	if err != nil {
-		return fmt.Sprintf("Error converting file to CSV %s", err)
+
+	if strings.HasSuffix(path, ".xlsx") {
+		err = helpers.ConvertToCSV(filename)
+		if err != nil {
+			return fmt.Sprintf("Error converting file to CSV %s", err)
+		}
+		return "File downloaded and converted to CSV"
 	}
 
-	return "File downloaded and converted to CSV"
+	return resp
 }
 
 func (s *Service) YAUpload(filename string) string {
